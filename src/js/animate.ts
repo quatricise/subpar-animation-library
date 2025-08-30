@@ -12,47 +12,6 @@ enum AnimationBatchState {
   Finished,
 }
 
-//@todo delete old types
-// type AnimationAction_Animate = {
-//   query:      string
-//   keyframes:  Keyframe[]
-//   options:    KeyframeAnimationOptions
-//   delayMS:    number
-// }
-
-// type AnimationAction_Set = {
-//   query:      string,
-//   style:      Partial<CSSStyleDeclaration>
-//   attributes: Record<string, string>
-// }
-
-// type AnimationAction_ClassAdd = {
-//   query:    string,
-//   classes:  string[],
-// }
-
-// type AnimationAction_ClassRemove = {
-//   query:    string,
-//   classes:  string[],
-// }
-
-// type AnimationAction_WaitMS = {
-//   durationMS: number
-// }
-
-// type AnimationAction_WaitFor = {
-//   query: string //which query was used for an animation, meaning you get to wait for this specific animation to end
-// }
-
-// type AnimationAction_Then = {
-//   function: Function
-// }
-
-// type AnimationAction_ResetInitialStyle = {
-//   query: string //for which query to remove the specified Partial<CSSStyleDeclaration> that was applied to it when the animation batch began
-// }
-
-
 type AnimationAction = 
 | {
   type: "Animate", 

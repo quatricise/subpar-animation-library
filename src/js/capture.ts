@@ -1,11 +1,9 @@
 import { clamp, sum } from "./utils.js"
 
-export type CaptureEvent = MouseEvent | PointerEvent
-
 export type CaptureSegment = {
   height: number
   scroll: number
-  hooks: Map<string, CaptureHook>
+  hooks: CaptureHookMap
 }
 
 export type CaptureSegmentFlags = {
@@ -16,6 +14,13 @@ export interface CaptureHook {
   (query: string, capture: Capture, segment: CaptureSegment): void
 }
 
+export interface CaptureEvent {
+  x: number
+  y: number
+}
+
+export type CaptureHookMap = Map<string, CaptureHook>
+
 export class Capture {
 
   /* 
@@ -24,17 +29,22 @@ export class Capture {
   ================
   */
 
-  static instances: Map<string, Capture> = new Map()
-  static events: CaptureEvent[] = []
+  static instances:     Map<string, Capture> = new Map()
+  static events:        CaptureEvent[] = []
   static isInitialized: boolean = false
+  static touchStart:    {x: number, y: number} = {x: 0, y: 0}
 
-  static updateAll() {
+  static updateAll() {    
     while(this.events.length > 0) {
-      const e = this.events.shift() as WheelEvent //@todo casting hack
+      const e = this.events.shift()
+
+      if(!e) break
       
-      //this just registers new data because the queued-up events could have changed the scroll of each segment
       this.instances.forEach(capture => {
-        capture.scroll = clamp(capture.scroll + e.deltaY, 0, sum(...capture.segments.map(s => s.height)))
+        const globalMult = 1
+        const increment = e.y * globalMult
+
+        capture.scroll = clamp(capture.scroll + increment, 0, sum(...capture.segments.map(s => s.height)))
         console.log("-------------Instance update---------------")
         console.log("Capture.scroll: ", capture.scroll)
 
@@ -68,7 +78,8 @@ export class Capture {
             segment.scroll = capture.scroll - accumulator
             segment.scroll = clamp(segment.scroll, 0, segment.height)
             console.log(activeSegmentIndex, segment.scroll)
-          } else 
+          } else
+            
           {
             throw new Error("This should not happen.")
           }
@@ -86,11 +97,35 @@ export class Capture {
     
     document.addEventListener("wheel", (e) => {
       e.preventDefault()
-
-      this.events.push(e)
+      if(this.events.length === 0) { //@todo @hack i 'think' this helps with performance, I only allow the first event per frame currently. This is only on desktop.
+        this.events.push({x: e.deltaX, y: e.deltaY}) 
+      }
     }, {passive: false})
 
-    //@todo missing handling of finger touches
+    // @todo unscrupulous mobile code
+    // successful tests on: 
+    // • Xiaomi Redmi Note 8, Brave browser
+    document.addEventListener("touchstart", (e) => {
+      if (e.touches.length === 1) {
+        this.touchStart.y = e.touches[0].clientY;
+        this.touchStart.x = e.touches[0].clientX;
+
+        if (window.scrollY === 0) {
+          e.preventDefault(); // should block pull-down refresh ??
+        }
+      }
+    }, {passive: false});
+
+    document.addEventListener("touchmove", (e) => {
+      if (e.touches.length === 1) {
+        const event = {x: this.touchStart.x - e.touches[0].clientX, y: this.touchStart.y - e.touches[0].clientY}
+        this.events.push(event)
+        if (window.scrollY === 0 && event.y > 0) {
+          e.preventDefault(); // should block pull-down refresh
+        }
+        this.touchStart = {x: e.touches[0].clientX, y: e.touches[0].clientY}
+      }
+    }, {passive: false});
 
     this.isInitialized = true
   }
@@ -101,11 +136,11 @@ export class Capture {
   ================
   */
 
-  name: string
-  scroll: number
-  segments: CaptureSegment[]
+  name:               string
+  scroll:             number
+  segments:           CaptureSegment[]
   activeSegmentIndex: number
-  flags: CaptureSegmentFlags
+  flags:              CaptureSegmentFlags
 
   constructor(name: string) {
     if(!Capture.isInitialized) throw new Error("Capture class not initialized yet. Please call Capture.init()")

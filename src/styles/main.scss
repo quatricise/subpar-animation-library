@@ -1,10 +1,16 @@
 @use "reset";
 
+html {
+  overscroll-behavior: "contain";
+}
+
 body {
   font-family: system-ui, sans-serif;
   line-height: 1.6;
   margin: 0;
   padding: 0;
+  overflow-x: hidden;
+  overscroll-behavior: "contain";
   color: #333;
 }
 
@@ -28,7 +34,7 @@ header {
 }
 
 main {
-  max-width: 800px;
+  // max-width: 800px;
   margin: 0 auto;
   padding: 2rem 1rem;
   
@@ -38,7 +44,7 @@ main {
   }
   
   section {
-    transition: all 0.05s ease-in-out;
+    // transition: all 0.3s ease-in-out; //this type of transition
     &.section--1 {
       position: relative;
       background-color: #0066cc;
@@ -48,6 +54,9 @@ main {
       position: relative;
       background-color: #c55c6a;
       height: 200px;
+      border-top: 100px;
+      border-top-style: solid;
+      border-top-color: transparent;
     }
     &.section--3 {
       position: relative;

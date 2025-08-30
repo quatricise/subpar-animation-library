@@ -9,11 +9,12 @@
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
+    "noImplicitAny": true,
     "noEmit": true,
     "strict": true,
     "noFallthroughCasesInSwitch": true,
 
-    /* useful turned-off to avoid driving me absolutely fucking nuts */
+    /* turned-off for development to avoid driving me absolutely fucking nuts */
     "noUnusedLocals": false,
     "noUnusedParameters": false,
   },
