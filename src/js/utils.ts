@@ -3,7 +3,7 @@ export function clamp(value: number, min: number, max: number) {
   return Math.max(Math.min(value, max), min)
 }
 
-export function sum(...values: number[]) {
+export function sum(...values: number[]): number {
   let accumulator = 0;
   values.forEach(v => accumulator += v)
   return accumulator

@@ -1,18 +1,18 @@
-type AnimationBatch = {
+export type AnimationBatch = {
   batchname:    string
   initialStyle: Partial<CSSStyleDeclaration>
   queries:      Set<string>
   elements:     HTMLElement[] //this is just the result of the 'queries' which are all run on Animate.batchRun() or Animate.batchDefine()
 }
 
-enum AnimationBatchState {
+export enum AnimationBatchState {
   Initial,
   Paused,
   Running,
   Finished,
 }
 
-type AnimationAction = 
+export type AnimationAction = 
 | {
   type: "Animate", 
   query: string, 
@@ -54,7 +54,7 @@ type AnimationAction =
 };
 
 
-enum AnimationErrorHandlingMethod {
+export enum AnimationErrorHandlingMethod {
   Alert,
   Log,
   Error,
@@ -62,13 +62,13 @@ enum AnimationErrorHandlingMethod {
 
 // this just means an animation branch is just a function that returns a promise so we can continue upon resolving, idk
 // it 'implicitly' also runs a bunch of animations but it literally is just some async code, which is better because it can be anything
-interface AnimationBranch {
+export interface AnimationBranch {
   (): Promise<unknown>;
 }
 
 
 
-class Animate {
+export class Animate {
 
   /* 
   ================
@@ -208,7 +208,7 @@ class Animate {
   }
 }
 
-Animate.batchDefine("button", [".button"], {}, AnimationErrorHandlingMethod.Alert)
+Animate.batchDefine("button", [".button"], {}, 0)
 
 /* 
 Animate.batchRun("button")

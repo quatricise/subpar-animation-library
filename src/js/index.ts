@@ -9,7 +9,7 @@ function tick(timeCurrent: number) {
   const timeDelta = timeCurrent - timeLast;
   timeLast = timeCurrent;
 
-  Capture.updateAll()
+  Capture.frameUpdate()
 
   window.requestAnimationFrame(tick)
 }
@@ -19,7 +19,7 @@ window.addEventListener("load", () => {
 })
 
 Capture.init()
-const capture = new Capture("test")
+const capture  = new Capture("sections")
 const section1 = $h("section.section--1")
 const section2 = $h("section.section--2")
 const section3 = $h("section.section--3")
@@ -33,7 +33,6 @@ const section3 = $h("section.section--3")
 
 const hook1: CaptureHook = (query: string, capture: Capture, segment: CaptureSegment) => {
   const element = $h(query)
-  console.log("Capture activeSegmentIndex: ", capture.activeSegmentIndex)
   if(capture.segments[capture.activeSegmentIndex] !== segment) {
     element.style = ""
     return
@@ -46,7 +45,6 @@ hooks1.set("section.section--1", hook1)
 
 const hook2: CaptureHook = (query: string, capture: Capture, segment: CaptureSegment) => {
   const element = $h(query)
-  console.log("Capture activeSegmentIndex: ", capture.activeSegmentIndex)
   if(capture.segments[capture.activeSegmentIndex] !== segment) {
     element.style = ""
     return
@@ -65,12 +63,15 @@ const hook3: CaptureHook = (query: string, capture: Capture, segment: CaptureSeg
     // (also this could besome a set of macros, or even better, allow users to create their own definitions for cleanup functions that run after the hook body)
     element.style = ""
     section2.style.borderTopColor = ""
+    section2.style.borderTopStyle = ""
     section2.style.borderTopWidth = ""
     return
   }
 
   section2.style.borderTopColor = `hsl(${(segment.scroll/8) % 360}, 50%, 50%)`
+  section2.style.borderTopStyle = "dashed"
   section2.style.borderTopWidth = (100 / (segment.height / segment.scroll)) + "px"
+  
   element.style.width = (segment.scroll) + "px"
   element.style.height = (200 + segment.scroll/10) + "px"
   element.style.backgroundColor = `hsl(${(segment.scroll/8) % 360}, 50%, 50%)`
@@ -78,15 +79,16 @@ const hook3: CaptureHook = (query: string, capture: Capture, segment: CaptureSeg
 const hooks3: CaptureHookMap = new Map()
 hooks3.set("section.section--3", hook3)
 
-capture.segmentAdd({height: section1.getBoundingClientRect().width, hooks: hooks1, scroll: 0})
-capture.segmentAdd({height: section2.getBoundingClientRect().width, hooks: hooks2, scroll: 0})
-capture.segmentAdd({height: section3.getBoundingClientRect().width, hooks: hooks3, scroll: 0})
+capture.addSegment({height: section1.getBoundingClientRect().width, hooks: hooks1, scroll: 0})
+capture.addSegment({height: section2.getBoundingClientRect().width, hooks: hooks2, scroll: 0})
+capture.addSegment({height: section3.getBoundingClientRect().width, hooks: hooks3, scroll: 0})
 
-/* 
+/*
 =======================
         IDEAS
 =======================
 */
+
 // captures can be nested so that the whole page is one big capture and inside it there are mini ones
 // that are only affected when scroll events are registered inside the containing element
 //
@@ -97,5 +99,15 @@ capture.segmentAdd({height: section3.getBoundingClientRect().width, hooks: hooks
 //
 // The beauty of hook functions is that they allow ANY kind of code, even code unrelated to HTML elements to happen inside them.
 //
-// Scroll snapping: Function that solves for where the segment (or capture) scroll has to go so that a particular edge of a particular element
-// touches a particular other edge
+// Scroll snapping: Function that solves for value the segment (or capture) scroll has to go so that 
+// a particular edge of a particular element touches a particular other edge
+
+// question: Should all hooks always be called all the time? 
+// Seems prudent and less prone to bugs, but perhaps two downsides: Performance and resolving edge-states
+
+// 1) @performance
+// will look into later
+
+// 2) Edge-states
+// the before-active and after-active states need to be constantly reevaluated. I could allow including a on-enter and on-leave function, and also a on-enter-forward and on-enter-backward
+// these two could allow different animations to trigger, perhaps, which could be tied to adjacent animations in other segments.
