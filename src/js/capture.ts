@@ -36,11 +36,12 @@ export class Capture {
   static scrollWidget:          HTMLElement
   static scrollWidgetPosition:  Vector2
   static scrollWidgetSize:      number = 24 //@todo store this somewhere so the Sass value is also derived from there. I guess I could just style the widget in this class tho.
-  static mouse:                 {positionClient: Vector2, positionPage: Vector2}
+  static mouse:                 {positionClient: Vector2, positionPage: Vector2, buttons: {0: boolean, 1: boolean, 2: boolean}}
 
   /* flags */
   static isInitialized:         boolean = false
   static isScrollwidgetVisible: boolean = false
+  static isMovedSinceMMBclick:  boolean = false
 
   static frameUpdate() {
     
@@ -55,8 +56,11 @@ export class Capture {
       const diffY = (this.mouse.positionClient.y - this.scrollWidgetPosition.y)
 
       if(Math.abs(diffY) > minDistance) {
-        // moveVector.y += diffY * speed //basic linear
-        moveVector.y += (diffY + (Math.abs(diffY) * diffY/150)) * speed //a little power-of-two
+        /* basic linear */
+        // moveVector.y += diffY * speed 
+
+        /* a little power-of-two magic dust */
+        moveVector.y += (diffY + (Math.abs(diffY) * diffY/150)) * speed 
       }
     }
 
@@ -121,14 +125,14 @@ export class Capture {
     }
     
     
-    this.events = [] 
     //I do the emptying here, but it might change, so far I am only accumulating scroll events and those resolve to a Vector2
+    this.events = [] 
   }
 
   static init() {
     if(this.isInitialized) return
 
-    this.mouse = {positionClient: {x: 0, y: 0}, positionPage: {x: 0, y: 0}}
+    this.mouse = {positionClient: {x: 0, y: 0}, positionPage: {x: 0, y: 0}, buttons: {0: false, 1: false, 2: false}}
     
     document.addEventListener("wheel", (e) => {
       e.preventDefault()
@@ -136,19 +140,42 @@ export class Capture {
     }, {passive: false})
 
     document.addEventListener("mousedown", (e) => {
-      if(e.button === 1) { //if MMB
+      this.isMovedSinceMMBclick = false //doesn't matter what button it was this time, the widget should show regardless
+      const target = e.target as HTMLElement //@todo this could possibly fail??? but I don't think so.
+
+       //show widget if MMB click and does not produce meaningful result; trying to mimic default WinOS behavior
+      if(target
+        && e.button === 1 
+        && target.closest("a") === null
+        && target.closest("button") === null
+        && target.closest("area") === null
+      ) {
         this.scrollWidgetShow(e)
       }
       else {
         this.scrollWidgetHide()
       }
+
+      if(e.button === 0) this.mouse.buttons[0] = true
+      if(e.button === 1) this.mouse.buttons[1] = true
+      if(e.button === 2) this.mouse.buttons[2] = true
     })
 
     document.addEventListener("mouseup", (e) => {
-      
+      if(this.mouse.buttons[1] && this.isMovedSinceMMBclick === true) {
+        this.scrollWidgetHide()
+      }
+
+      if(e.button === 0) this.mouse.buttons[0] = false
+      if(e.button === 1) this.mouse.buttons[1] = false
+      if(e.button === 2) this.mouse.buttons[2] = false
     })
 
     document.addEventListener("mousemove", (e) => {
+      if(this.mouse.buttons[1]) {
+        this.isMovedSinceMMBclick = true
+      }
+
       this.mouse.positionClient.x = e.clientX
       this.mouse.positionClient.y = e.clientY
       this.mouse.positionPage.x = e.pageX
@@ -164,7 +191,7 @@ export class Capture {
         this.touchStart.x = e.touches[0].clientX;
 
         if (window.scrollY === 0) {
-          e.preventDefault(); // should block pull-down refresh ??
+          e.preventDefault(); // should block pull-down refresh ?? @todo insufficiently tested on various mobile browsers
         }
       }
     }, {passive: false});
@@ -174,7 +201,7 @@ export class Capture {
         const event = {x: this.touchStart.x - e.touches[0].clientX, y: this.touchStart.y - e.touches[0].clientY}
         this.events.push(event)
         if (window.scrollY === 0 && event.y > 0) {
-          e.preventDefault(); // should block pull-down refresh
+          e.preventDefault(); // should block pull-down refresh @todo insufficiently tested on various mobile browsers
         }
         this.touchStart = {x: e.touches[0].clientX, y: e.touches[0].clientY}
       }
@@ -190,7 +217,9 @@ export class Capture {
     this.isInitialized = true
   }
 
-  static scrollWidgetShow(e: MouseEvent) { //super hacky, just want something so I don't forget about this
+  static scrollWidgetShow(e: MouseEvent) { //@todo I think the layout update should not happen here, actually; keep the updates to the rendering loop
+    if(this.isScrollwidgetVisible) return
+
     this.scrollWidget.style.display = "block"
     this.scrollWidgetPosition = {x: e.clientX, y: e.clientY}
     this.scrollWidget.style.left = this.scrollWidgetPosition.x - (this.scrollWidgetSize/2) + "px"
@@ -199,6 +228,8 @@ export class Capture {
   }
 
   static scrollWidgetHide() {
+    if(!this.isScrollwidgetVisible) return
+
     this.scrollWidget.style.display = "none"
     this.isScrollwidgetVisible = false
   }
@@ -212,6 +243,7 @@ export class Capture {
   name:               string
   scroll:             number
   segments:           CaptureSegment[]
+  globalHooks:        CaptureHook[]
   activeSegmentIndex: number
   flags:              CaptureSegmentFlags
 
@@ -224,6 +256,7 @@ export class Capture {
     this.name = name
     this.scroll = 0
     this.segments = []
+    this.globalHooks = []
     this.activeSegmentIndex = 0
     this.flags = {active: false}
   }
@@ -232,7 +265,19 @@ export class Capture {
     this.segments.push(segment)
   }
 
+  addGlobalHook(hook: CaptureHook) { 
+    // @todo tbh I don't know what to do here, it sucks that these would be different, but maybe I can just call these CaptureMacro(s) and they have different parameters
+    // I'm still not sure for the usecase for this, all I can think of is making sure the API user can delineate global code from segment-local code
+    // which is useful for mental modeling, actually, so I think it's sufficient
+    /// . . . I'll try to implement this
+    this.globalHooks.push(hook)
+  }
+
   getTotalSegmentLength(): number {
     return sum(...this.segments.map(s => s.height))
   }
 }
+
+document.addEventListener("click", () => {
+  console.log(getComputedStyle(document.body))
+})
