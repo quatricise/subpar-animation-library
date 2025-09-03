@@ -110,8 +110,7 @@ export class Animate {
   actions: AnimationAction[]
   actionCurrent: number
 
-  constructor() {
-    //@todo just temporary fill-in
+  constructor() { //@todo just temporary fill-in with empty or useless stuff
     this.batchname = ""
     this.batch = {batchname: "", elements: [], initialStyle: {}, queries: new Set()}
     this.state = AnimationBatchState.Initial
@@ -203,18 +202,35 @@ export class Animate {
     return this
   }
 
-  waitFor(): Animate {
+  waitFor(): Animate { //wait for a specific anim to finish
     return this
+  }
+
+  waitTrigger(): Animate {
+    return this
+
+    // basically a way to suspend the animation and resume once some useful action occurs, such as an element entering viewport. The reason for including this as a separate method
+    // is due to how often something like this is used, I think good API design provides some comfort too, highly repetitive tasks should be simplified
+
+    /* TYPES */
+    /* element-enter, mouse-enter,   */
   }
 }
 
 Animate.batchDefine("button", [".button"], {}, 0)
 
+
+/* 
+=======================
+      USAGE IDEAS
+=======================
+*/
+
 /* 
 Animate.batchRun("button")
 .animate()
 .router(condition, trueBranch, falseBranch)
-.animate() //here - VERY IMPORTANT - this call follows regardless of which branch was selected in the router.
+.animate() //here - VERY IMPORTANT - next call follows regardless of which branch was selected in the router.
 
 Animate.batchRun("button")
 .animate()
@@ -235,7 +251,7 @@ Animate.batchRun("button")
 Animate.batchRun("button")
 .animate()
 .then()
-.await() //just wait for onComplete(d) to run on the promise supplied by the .then() method. I suppose a Promise will need to be supplied by the .then method
+.thenComplete() //just wait for onComplete(d) to run on the promise supplied by the .then() method. I suppose a Promise will need to be supplied by the .then method
 
 
 */
