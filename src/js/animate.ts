@@ -241,3 +241,4 @@ Animate.batchRun("button")
 // Capture.ts already runs per frame, except there is a slight issue that delta-time is a complicated thing.
 // also doing animations without the native tweens and element.animate could be too painful. Except not, I've done it before on Star Lib.
 // plug this into Capture.
+// animations should be capable of scrubbing, this means divorcing with element.animate API completely and just run this via a custom ticker
