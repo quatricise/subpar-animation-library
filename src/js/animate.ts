@@ -77,6 +77,7 @@ export class Animate {
   */
 
   static batches: Map<string, AnimationBatch>
+  static batchCurrent: AnimationBatch
 
   static batchDefine(
       batchname: string,
@@ -162,127 +163,81 @@ export class Animate {
     }
   }
   
-  animate(): Animate {
-    return this
+  animate() {
   }
 
-  classAdd(): Animate {
-    return this
+  classAdd() {
   }
 
-  classRemove(): Animate {
-    return this
+  classRemove() {
   }
 
-  then(fn: AnimationBranch): Animate {
-    //code
-    return this
+  then(fn: AnimationBranch) {
   }
 
-  thenAsync(fn: Function): Animate {
+  thenAsync(fn: Function) {
     // this method does not wait until resolving a promise, it just calls the function and moves on.
     // @todo which is just the same as .then(), fuck me i guess?
     // perhaps .then() does require a .thenComplete() to continue.
-    return this
   }
 
-  thenFail(): Animate {
-    return this
+  thenFail() {
   }
 
-  thenSuccess(): Animate {
-    return this
+  thenSuccess() {
   }
 
-  thenComplete(): Animate {
-    return this
+  thenComplete() {
   }
   
-  waitMS(): Animate {
-    return this
+  waitMS() {
   }
 
-  waitFor(): Animate { //wait for a specific anim to finish
-    return this
+  waitFor() { //wait for a specific anim to finish
   }
 
-  waitTrigger(): Animate {
-    return this
+  waitTrigger() {
 
-    // basically a way to suspend the animation and resume once some useful action occurs, such as an element entering viewport. The reason for including this as a separate method
-    // is due to how often something like this is used, I think good API design provides some comfort too, highly repetitive tasks should be simplified
-
-    /* TYPES */
-    /* element-enter, mouse-enter,   */
   }
 }
 
-Animate.batchDefine("button", [".button"], {}, 0)
+// ! a much better syntax that does not use the stupid dot(.) syntax, because now any custom logic can run betwen
+// the function animateButton is just a way to modularize a larger system of animations
+function animateButton {
+  const a = Animate
 
+  // begins a new definition of an animation "button", all subsequent operations pertain to this animation stored under the name "button"
+  a.batchDefineBegin("button", [".button"], {}, 0)
 
-/* 
-=======================
-      USAGE IDEAS
-=======================
-*/
+  a.blabla1()
+  a.blabla2()
 
-/* 
+  if(condition) {
+    a.blablaTrue()
+  } else {
+    a.blablaFalse()
+  }
+
+  for(let i = 0; i < 5; ++i) {
+    a.blabla("button", [{}], {duration: 100 * i})
+  }
+
+  // ends the definition for the animation sequence or logic that is "button"
+  Animate.batchDefineEnd("button")
+}
+
+//activates the animation "button"
 Animate.batchRun("button")
-.animate()
-.router(condition, trueBranch, falseBranch)
-.animate() //here - VERY IMPORTANT - next call follows regardless of which branch was selected in the router.
-
-Animate.batchRun("button")
-.animate()
-.map(condition, branches<value, branch>, failBranch)
-//here we can basically 'switch(condition)' on the condition, based on which value it is we choose a branch, getting an error if such branch does not exist.
-//this would ideally, of course, be compile-time checked, but that's probably not possible since the condition could come from user interaction,
-//so 'failBranch' is called when it's
-
-Animate.batchRun("button")
-.animate()
-.if(condition)
-.then()
-.else()
-.if(condition)
-.then()
-.else()
-
-Animate.batchRun("button")
-.animate()
-.then()
-.thenComplete() //just wait for onComplete(d) to run on the promise supplied by the .then() method. I suppose a Promise will need to be supplied by the .then method
 
 
-*/
-
-/* 
+/*
 =========================
           GOALS
 =========================
 */
 
-// so how do I make an animation system that plugs into business logic and state logic, so that it's both decoupled and easy to understand but also super powerful
-// the JS thingy I made recently is not really up to that task, it does animate, and if I rewrote it in TS it would be better, the actions are the main thing that need improvement
-
-// > PUSHING STATE DATA IN
-// this might be simpler than thought, you simply just apply styles to elements and that's how you change the website
-
-// > INJECTION OF CUSTOM CODE
-// I need to attach sequential methods to doing anything, which I already have in .then() so that's nice,
-// but could I make it .then().then() ? as to chain multiple things to each other and then perhaps optionally wait for all of them or skip waiting for all of them
-// the custom code and potential routing could be very very useful, as long as it's extremely general, so you can inject your own code
-
-// > RELIABILITY AND ERRORS
-// I like the idea of using a 'terminate' command, such as batchTerminate() and potentially some kind of guardrails that guarantee 
-// you didn't forget about something or the animation didn't fail in any way. 
-// additionally what if I want to fork and optionally wait for an async thingy that either fails or not fails, I can do branching by splitting the tree of following
-// animations into two trees, which I almost had, but I had no option to wait for the nested trees to be awaited
-
-// > COMPATIBILITY
-// Animating is tricky since some browsers do not support some features or do not support them to be animatable.
-
-// > WHAT (THE FUCK) IS THIS
-// Is it a good idea to put async data and routing into an animation system? 
-// Should I make a wrapper for GSAP instead? 
-// I'm absolutely not sure what the use-case is here, so I have to stop building this.
+// this is part of a larger effort to create a sensible JS framework, combining Animate and Capture and HTML and NCSS classes into a system with a centralized state
+// somewhat like a game, also where animations and everything is done per-frame
+// Capture.ts already runs per frame, except there is a slight issue that delta-time is a complicated thing.
+// also doing animations without the native tweens and element.animate could be too painful. Except not, I've done it before on Star Lib.
+// plug this into Capture.
